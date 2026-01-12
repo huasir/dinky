@@ -38,6 +38,7 @@ import lombok.extern.slf4j.Slf4j;
     Dialect.MYSQL,
     Dialect.ORACLE,
     Dialect.POSTGRESQL,
+    Dialect.VASTBASE,
     Dialect.HIVE,
     Dialect.SQLSERVER,
     Dialect.CLICKHOUSE,

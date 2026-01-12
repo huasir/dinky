@@ -24,6 +24,7 @@ import org.dinky.cdc.mysql.MysqlCDCBuilder;
 import org.dinky.cdc.oracle.OracleCDCBuilder;
 import org.dinky.cdc.postgres.PostgresCDCBuilder;
 import org.dinky.cdc.sqlserver.SqlServerCDCBuilder;
+import org.dinky.cdc.vastbase.VastbaseCDCBuilder;
 import org.dinky.data.model.FlinkCDCConfig;
 import org.dinky.exception.FlinkClientException;
 
@@ -40,6 +41,7 @@ public class CDCBuilderFactory {
                     .put(MysqlCDCBuilder.KEY_WORD, MysqlCDCBuilder::new)
                     .put(OracleCDCBuilder.KEY_WORD, OracleCDCBuilder::new)
                     .put(PostgresCDCBuilder.KEY_WORD, PostgresCDCBuilder::new)
+                    .put(VastbaseCDCBuilder.KEY_WORD, VastbaseCDCBuilder::new)
                     .put(SqlServerCDCBuilder.KEY_WORD, SqlServerCDCBuilder::new)
                     .build();
 

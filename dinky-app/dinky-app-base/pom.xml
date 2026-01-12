@@ -191,6 +191,16 @@
         </dependency>
         <dependency>
             <groupId>org.dinky</groupId>
+            <artifactId>dinky-metadata-vastbase</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.dinky</groupId>
             <artifactId>dinky-metadata-sqlserver</artifactId>
             <exclusions>
                 <exclusion>

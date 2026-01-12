@@ -20,40 +20,38 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.dinky</groupId>
-        <artifactId>dinky</artifactId>
+        <artifactId>dinky-metadata</artifactId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>dinky-metadata</artifactId>
+    <artifactId>dinky-metadata-vastbase</artifactId>
 
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
 
-    <name>Dinky : Metadata</name>
-
-    <modules>
-        <module>dinky-metadata-base</module>
-        <module>dinky-metadata-mysql</module>
-        <module>dinky-metadata-oracle</module>
-        <module>dinky-metadata-clickhouse</module>
-        <module>dinky-metadata-postgresql</module>
-        <module>dinky-metadata-sqlserver</module>
-        <module>dinky-metadata-doris</module>
-        <module>dinky-metadata-phoenix</module>
-        <module>dinky-metadata-hive</module>
-        <module>dinky-metadata-starrocks</module>
-        <module>dinky-metadata-presto</module>
-        <module>dinky-metadata-paimon</module>
-        <module>dinky-metadata-vastbase</module>
-    </modules>
+    <name>Dinky : Metadata : Vastbasesql</name>
 
     <dependencies>
         <dependency>
-            <groupId>com.github.xiaoymin</groupId>
-            <artifactId>knife4j-openapi2-spring-boot-starter</artifactId>
+            <groupId>org.dinky</groupId>
+            <artifactId>dinky-metadata-base</artifactId>
+        </dependency>
+
+        <!-- test dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.dinky</groupId>
-            <artifactId>dinky-common</artifactId>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 

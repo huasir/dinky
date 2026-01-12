@@ -33,7 +33,8 @@ public enum DataBaseType {
     MYSQL("mysql"),
     SQLSERVER("sqlserver"),
     ORACLE("oracle"),
-    POSTGRESQL("postgresql");
+    POSTGRESQL("postgresql"),
+    VASTBASE("vastbase");
 
     private String type;
 

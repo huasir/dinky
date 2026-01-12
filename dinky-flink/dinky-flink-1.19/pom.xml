@@ -107,11 +107,6 @@
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-sql-connector-postgres-cdc</artifactId>
-            <version>${flinkcdc.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.flink</groupId>
             <artifactId>flink-cdc-cli</artifactId>
             <version>${flinkcdc.version}</version>
         </dependency>
@@ -168,6 +163,16 @@
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-sql-client</artifactId>
             <version>${flink.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.com.exbase</groupId>
+            <artifactId>flink-connector-vastbase-cdc</artifactId>
+            <version>3.0.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.com.exbase</groupId>
+            <artifactId>vastbase-connector-jdbc</artifactId>
+            <version>2.10</version>
         </dependency>
     </dependencies>
 </project>

@@ -224,6 +224,14 @@
             </includes>
         </fileSet>
         <fileSet>
+            <directory>${project.parent.basedir}/dinky-metadata/dinky-metadata-vastbase/target
+            </directory>
+            <outputDirectory>lib</outputDirectory>
+            <includes>
+                <include>dinky-metadata-vastbase-${project.version}.jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
             <directory>${project.parent.basedir}/dinky-metadata/dinky-metadata-sqlserver/target
             </directory>
             <outputDirectory>lib</outputDirectory>

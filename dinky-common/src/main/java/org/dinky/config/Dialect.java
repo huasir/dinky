@@ -38,6 +38,7 @@ public enum Dialect {
     ORACLE("Oracle"),
     SQLSERVER("SqlServer"),
     POSTGRESQL("PostgreSql"),
+    VASTBASE("Vastbase"),
     CLICKHOUSE("ClickHouse"),
     DORIS("Doris"),
     PHOENIX("Phoenix"),
@@ -85,6 +86,7 @@ public enum Dialect {
             case ORACLE:
             case SQLSERVER:
             case POSTGRESQL:
+            case VASTBASE:
             case CLICKHOUSE:
             case DORIS:
             case PHOENIX:

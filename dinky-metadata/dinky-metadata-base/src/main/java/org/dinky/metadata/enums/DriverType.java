@@ -41,7 +41,8 @@ public enum DriverType {
     PHOENIX("Phoenix"),
     GREENPLUM("Greenplum"),
     HIVE("Hive"),
-    PRESTO("Presto");
+    PRESTO("Presto"),
+    VASTBASE("Vastbase");
 
     public final String value;
 

@@ -75,6 +75,7 @@ public class DebeziumCustomConverter implements CustomConverter<SchemaBuilder, R
             case SQLSERVER:
             case ORACLE:
             case POSTGRESQL:
+            case VASTBASE:
                 break;
             default:
                 String errMsg = "Not support " + databaseType + " database type";

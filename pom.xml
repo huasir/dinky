@@ -607,6 +607,11 @@
             </dependency>
             <dependency>
                 <groupId>org.dinky</groupId>
+                <artifactId>dinky-metadata-vastbase</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.dinky</groupId>
                 <artifactId>dinky-gateway</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -894,7 +899,7 @@
                             <order>\#,org.dinky,org.apache,java,javassist,javax,org,com,</order>
                         </importOrder>
                         <licenseHeader>
-                            <file>style/license_header</file>
+                            <file>${maven.multiModuleProjectDirectory}/style/license_header</file>
                         </licenseHeader>
                         <replaceRegex>
                             <name>Remove wildcard imports</name>
@@ -930,7 +935,7 @@
                             <include>dinky-web/src/**/*.js</include>
                         </includes>
                         <licenseHeader>
-                            <file>style/license_header</file>
+                            <file>${maven.multiModuleProjectDirectory}/style/license_header</file>
                             <delimiter>(?!(\/\*|\ \*|\/\*|\/\/|\s))</delimiter>
                         </licenseHeader>
                     </typescript>
