@@ -159,34 +159,21 @@ public class VastbaseDebeziumConverter extends DebeziumCustomConverter {
      * 3. 如果会话时区设置错误（例如是UTC），ts.toLocalDateTime() 可能返回错误的本地时间
      *
      * 解决方案：
-     * 直接使用 ts.toLocalDateTime()，假设它返回的是源库存储的本地时间（基于 serverZoneId）。
-     * 然后将其解释为 serverZoneId 的本地时间，转换为 UTC ISO 字符串。
-     *
-     * 注意：如果数据库会话时区设置错误，这个转换可能不正确。
-     * 因此，必须确保 JDBC URL 中的 timezone 参数正确设置。
+     * - 快照：java.sql.Timestamp → toLocalDateTime() 得源库墙钟，再 atZone(serverZoneId) 转 UTC。
+     * - 增量：java.time.Instant → 按 UTC 取墙钟（ofInstant(..., UTC)），再 atZone(serverZoneId) 转 UTC。
+     * 必须确保 JDBC URL 的 timezone 与 source.server-time-zone 一致。
      */
     private String formatTimestampAsUtcIso(Object value) {
         LocalDateTime ldt;
         if (value instanceof java.sql.Timestamp) {
-            java.sql.Timestamp ts = (java.sql.Timestamp) value;
-            // 关键修复：直接使用 toLocalDateTime()，假设它返回的是源库存储的本地时间
-            // 这是因为我们在 JDBC URL 中设置了 timezone=serverZoneId，确保数据库会话时区是源库时区
-            // 这样 ts.toLocalDateTime() 返回的就是源库的本地时间表示
-            //
-            // 数据流分析：
-            // 1. 源库存储：2025-01-09 10:00:00（东8区本地时间，无时区信息）
-            // 2. JDBC URL timezone=Asia/Shanghai：确保数据库会话时区是东8区
-            // 3. Debezium 读取：将 "2025-01-09 10:00:00" 解释为东8区本地时间
-            // 4. ts.getTime()：返回 2025-01-09T02:00:00Z 的 UTC 时间戳（正确）
-            // 5. ts.toLocalDateTime()：返回 2025-01-09 10:00:00（源库的本地时间，正确）
-            // 6. 将其解释为 Asia/Shanghai 本地时间并转换为 UTC：2025-01-09T02:00:00Z（正确）
-            // 7. DataTypeConverter 将其转换为 Asia/Shanghai 本地时间：2025-01-09 10:00:00（正确）
-            ldt = ts.toLocalDateTime();
+            // 快照阶段：JDBC 会话时区为 serverZoneId 时，toLocalDateTime() 即源库墙钟时间
+            ldt = ((java.sql.Timestamp) value).toLocalDateTime();
+        } else if (value instanceof LocalDateTime) {
+            ldt = (LocalDateTime) value;
         } else if (value instanceof Instant) {
-            // 增量 CDC（WAL）：墙钟时间被 Debezium 当作 UTC 编码为 Instant，按 UTC 取出墙钟再转真 UTC
+            // 增量/WAL 阶段：Debezium 常将 TIMESTAMP WITHOUT TIME ZONE 的墙钟时刻编码为 UTC Instant
+            //（例如源库 17:09:20 会变成 17:09:20Z）。需按 UTC 取出墙钟，再按 serverZoneId 解释为本地时刻转真 UTC。
             ldt = LocalDateTime.ofInstant((Instant) value, ZoneOffset.UTC);
-        } else if (value instanceof java.time.LocalDateTime) {
-            ldt = (java.time.LocalDateTime) value;
         } else {
             logger.debug(
                     "VastbaseDebeziumConverter.formatTimestampAsUtcIso: Unsupported value type: {}",
