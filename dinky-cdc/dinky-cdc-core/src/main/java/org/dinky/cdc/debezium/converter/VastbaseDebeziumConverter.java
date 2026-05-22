@@ -172,7 +172,7 @@ public class VastbaseDebeziumConverter extends DebeziumCustomConverter {
             ldt = (LocalDateTime) value;
         } else if (value instanceof Instant) {
             // 增量/WAL 阶段：Debezium 常将 TIMESTAMP WITHOUT TIME ZONE 的墙钟时刻编码为 UTC Instant
-            //（例如源库 17:09:20 会变成 17:09:20Z）。需按 UTC 取出墙钟，再按 serverZoneId 解释为本地时刻转真 UTC。
+            // （例如源库 17:09:20 会变成 17:09:20Z）。需按 UTC 取出墙钟，再按 serverZoneId 解释为本地时刻转真 UTC。
             ldt = LocalDateTime.ofInstant((Instant) value, ZoneOffset.UTC);
         } else {
             logger.debug(
