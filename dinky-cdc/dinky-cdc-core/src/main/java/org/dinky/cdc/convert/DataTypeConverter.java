@@ -134,7 +134,7 @@ public class DataTypeConverter {
             case TIME_WITHOUT_TIME_ZONE:
                 return convertToTime(value, logicalType, timeZone);
             case TIMESTAMP_WITHOUT_TIME_ZONE:
-                return convertToTimestamp(value, logicalType);
+                return convertToTimestamp(value, logicalType, timeZone);
             case TIMESTAMP_WITH_TIME_ZONE:
                 return convertToTimestampWithTimeZone(value, logicalType, timeZone);
             case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
@@ -180,7 +180,7 @@ public class DataTypeConverter {
             case TIME_WITHOUT_TIME_ZONE:
                 return convertToTime(value, logicalType, timeZone);
             case TIMESTAMP_WITHOUT_TIME_ZONE:
-                return convertToTimestampData(value, logicalType);
+                return convertToTimestampData(value, logicalType, timeZone);
             case TIMESTAMP_WITH_TIME_ZONE:
                 return convertToTimestampDataWithTimeZone(value, logicalType, timeZone);
             case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
@@ -364,26 +364,31 @@ public class DataTypeConverter {
                 + obj.getClass().getName());
     }
 
-    private static Object convertToTimestamp(Object obj, LogicalType logicalType) {
+    private static Object convertToTimestamp(Object obj, LogicalType logicalType, ZoneId timeZone) {
         if (obj instanceof Integer) {
             return Instant.ofEpochMilli(((Integer) obj).longValue())
-                    .atZone(ZoneId.systemDefault())
+                    .atZone(timeZone != null ? timeZone : ZoneId.systemDefault())
                     .toLocalDateTime();
         } else if (obj instanceof String) {
-            return Instant.parse((String) obj).atZone(ZoneId.systemDefault()).toLocalDateTime();
+            // ISO 字符串（如 "2025-02-21T07:09:12Z"）表示 UTC 时间，解析后需要转换为目标时区
+            Instant instant = Instant.parse((String) obj);
+            // 对于 UTC ISO 字符串，应该保持 UTC 时间戳，然后转换为目标时区显示
+            // 但如果目标时区与源时区一致，则直接转换
+            return instant.atZone(timeZone != null ? timeZone : ZoneId.systemDefault())
+                    .toLocalDateTime();
         } else if (obj instanceof Long) {
             TimestampType logicalType1 = (TimestampType) logicalType;
             if (logicalType1.getPrecision() == 3) {
                 return Instant.ofEpochMilli((long) obj)
-                        .atZone(ZoneId.systemDefault())
+                        .atZone(timeZone != null ? timeZone : ZoneId.systemDefault())
                         .toLocalDateTime();
             } else if (logicalType1.getPrecision() > 3) {
                 return Instant.ofEpochMilli(((long) obj) / (long) Math.pow(10, logicalType1.getPrecision() - 3))
-                        .atZone(ZoneId.systemDefault())
+                        .atZone(timeZone != null ? timeZone : ZoneId.systemDefault())
                         .toLocalDateTime();
             }
             return Instant.ofEpochSecond(((long) obj))
-                    .atZone(ZoneId.systemDefault())
+                    .atZone(timeZone != null ? timeZone : ZoneId.systemDefault())
                     .toLocalDateTime();
         }
         throw new IllegalArgumentException("Unable to convert to TIMESTAMP from unexpected value '"
@@ -392,8 +397,16 @@ public class DataTypeConverter {
                 + obj.getClass().getName());
     }
 
+    private static Object convertToTimestamp(Object obj, LogicalType logicalType) {
+        return convertToTimestamp(obj, logicalType, null);
+    }
+
+    private static Object convertToTimestampData(Object obj, LogicalType logicalType, ZoneId timeZone) {
+        return TimestampData.fromLocalDateTime((LocalDateTime) convertToTimestamp(obj, logicalType, timeZone));
+    }
+
     private static Object convertToTimestampData(Object obj, LogicalType logicalType) {
-        return TimestampData.fromLocalDateTime((LocalDateTime) convertToTimestamp(obj, logicalType));
+        return convertToTimestampData(obj, logicalType, null);
     }
 
     private static Object convertToTimestampWithTimeZone(Object obj, LogicalType logicalType, ZoneId timeZone) {
