@@ -1,0 +1,17 @@
+[project]
+name = "dinky-mcp"
+version = "0.1.0"
+description = "MCP server for Dinky Flink SQL platform OpenAPI"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "httpx>=0.28.1",
+    "mcp>=1.27.2",
+]
+
+[project.scripts]
+dinky-mcp = "dinky_mcp.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
