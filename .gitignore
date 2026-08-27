@@ -66,3 +66,7 @@ extends/*
 .idea/vcs.xml
 .vscode/
 dinky-web/package-lock.json
+
+# LTSK 本地部署密钥/主机配置（勿提交）
+script/ltsk/deploy.env
+**/deploy.env

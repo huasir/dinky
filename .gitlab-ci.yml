@@ -1,0 +1,76 @@
+# LTSK / 公司仓 GitLab CI
+# - 自动：格式检查 + 打包制品
+# - 不自动部署：部署请用 script/ltsk/deploy-release.sh（可人工执行，或日后接到手动 Job）
+
+stages:
+  - check
+  - package
+
+variables:
+  MAVEN_OPTS: "-Xmx2G -Xms2G"
+  # 按公司实际 Flink 版本改；也可在 GitLab CI/CD Variables 覆盖
+  DINKY_MVN_PROFILES: "prod,jdk11,flink-single-version,scala-2.12,flink-1.20,web"
+  GIT_DEPTH: "0"
+
+.default_maven:
+  image: maven:3.9-eclipse-temurin-11
+  before_script:
+    - java -version
+    - ./mvnw -v
+
+# ---------- check ----------
+spotless:
+  extends: .default_maven
+  stage: check
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH =~ /^vendor\//
+    - if: $CI_COMMIT_TAG =~ /^ltsk-/
+  script:
+    - ./mvnw -B --no-transfer-progress spotless:check -P flink-all -Dspotless.ratchetFrom=HEAD
+
+# ---------- package（分支推送：出包便于验证，不部署）----------
+package-branch:
+  extends: .default_maven
+  stage: package
+  needs: ["spotless"]
+  rules:
+    - if: $CI_COMMIT_BRANCH =~ /^vendor\//
+  script:
+    - >
+      ./mvnw -B --no-transfer-progress clean package
+      -DskipTests=true
+      -Dspotless.check.skip=true
+      -P ${DINKY_MVN_PROFILES}
+    - ls -lh build/ || true
+  artifacts:
+    name: "dinky-$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - build/*.tar.gz
+    expire_in: 7 days
+    when: on_success
+
+# ---------- package（生产 tag：出正式制品，仍不自动部署）----------
+package-tag:
+  extends: .default_maven
+  stage: package
+  needs: ["spotless"]
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^ltsk-/
+  script:
+    - >
+      ./mvnw -B --no-transfer-progress clean package
+      -DskipTests=true
+      -Dspotless.check.skip=true
+      -P ${DINKY_MVN_PROFILES}
+    - ls -lh build/
+    - |
+      echo "制品已生成。部署请在有权限的机器上执行："
+      echo "  cp script/ltsk/deploy.env.example deploy.env  # 填好后"
+      echo "  ./script/ltsk/deploy-release.sh --env deploy.env --package build/dinky-release-*.tar.gz"
+  artifacts:
+    name: "dinky-$CI_COMMIT_TAG"
+    paths:
+      - build/*.tar.gz
+    expire_in: 30 days
+    when: on_success
