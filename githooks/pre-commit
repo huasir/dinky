@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Commit 前自动执行 spotless:apply，与编辑器无关（Cursor / IDEA / 终端均可）。
+set -euo pipefail
+
+if [[ "${SKIP_SPOTLESS:-}" == "1" ]]; then
+  echo "[githooks] SKIP_SPOTLESS=1，跳过 spotless:apply"
+  exit 0
+fi
+
+# merge / rebase 过程中默认跳过，避免干扰冲突解决；需要时可 SPOTLESS_DURING_REBASE=1
+GIT_DIR="$(git rev-parse --git-dir)"
+if [[ -f "${GIT_DIR}/MERGE_HEAD" || -d "${GIT_DIR}/rebase-merge" || -d "${GIT_DIR}/rebase-apply" ]]; then
+  if [[ "${SPOTLESS_DURING_REBASE:-}" != "1" ]]; then
+    echo "[githooks] 检测到 merge/rebase，跳过 spotless:apply"
+    exit 0
+  fi
+fi
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "${REPO_ROOT}"
+
+# 仅当暂存区有 Spotless 会处理的文件时才跑
+STAGED_FILES="$(git diff --cached --name-only --diff-filter=ACMR || true)"
+if [[ -z "${STAGED_FILES}" ]]; then
+  exit 0
+fi
+
+RELEVANT="$(printf '%s\n' "${STAGED_FILES}" | grep -E '\.(java|xml|ts|tsx|js)$' || true)"
+if [[ -z "${RELEVANT}" ]]; then
+  exit 0
+fi
+
+if [[ ! -x ./mvnw ]]; then
+  echo "[githooks] 未找到可执行的 ./mvnw，无法运行 spotless:apply" >&2
+  exit 1
+fi
+
+echo "[githooks] 正在 spotless:apply（相对 HEAD 的变更）..."
+# ratchetFrom=HEAD：只格式化相对上次提交有改动的文件，速度快，且不依赖 origin/dev
+./mvnw -B --no-transfer-progress -q \
+  spotless:apply \
+  -P flink-all \
+  -Dspotless.ratchetFrom=HEAD
+
+# 把格式化后的同名已暂存文件重新加入暂存区
+while IFS= read -r file; do
+  [[ -z "${file}" ]] && continue
+  if [[ -f "${file}" ]]; then
+    git add -- "${file}"
+  fi
+done <<< "${RELEVANT}"
+
+echo "[githooks] spotless:apply 完成"
