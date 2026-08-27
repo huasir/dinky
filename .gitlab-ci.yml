@@ -26,7 +26,8 @@ variables:
 
 .install_vastbase_jars: &install_vastbase_jars
   - unset MAVEN_CONFIG || true
-  - bash dinky-flink/dinky-flink-1.20/install_jar.sh
+  # 该镜像无 bash，使用 sh
+  - sh dinky-flink/dinky-flink-1.20/install_jar.sh
 
 spotless:
   extends: .default_maven
