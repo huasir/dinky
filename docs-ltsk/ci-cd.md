@@ -19,10 +19,10 @@
 | 项 | 值 | 说明 |
 |----|-----|------|
 | Runner `tags` | `global-ltd` | **必填**，否则 Job 一直 pending |
-| Maven 镜像 | `liudonglin/maven:ltd-cd-nexus` | 内网 Nexus，与现网一致 |
-| `MAVEN_CONFIG` | 必须清空 | 镜像常设为 `/root/.m2`；对 `mvnw` 会变成非法 Maven 参数 |
-| JDK | **11+** | 该镜像默认多为 JDK8；Dinky/Spotless 需要 11，可设 CI 变量 `JAVA_HOME_11` |
-| Harbor（可选，未接） | `harbor.chinasteel.com.cn` / `ltd-bigdata` | 其它项目 docker-push 用；Dinky 当前只出 tar.gz |
+| Maven 镜像 | `10.0.0.17:3060/cicd/maven-microsoft-openjdk:3.9.6-17` | JDK17；Harbor 无现成 JDK11+Maven 组合 |
+| 旧镜像（勿用） | `cicd/maven:ltd-cd-nexus` / `liudonglin/maven:ltd-cd-nexus` | JDK8，不满足 Spotless/Dinky 1.x |
+| `MAVEN_CONFIG` | 必须清空 | 部分镜像设为 `/root/.m2`，会污染 Maven 参数 |
+| Harbor | `http://10.0.0.17:3060/harbor`（`cicd` 项目） | 搜 maven / openjdk 可看其它 tag |
 
 1. 如 Flink 版本不是 1.20，在 CI/CD Variables 设置：
    - `DINKY_MVN_PROFILES=prod,jdk11,flink-single-version,scala-2.12,flink-1.xx,web`
