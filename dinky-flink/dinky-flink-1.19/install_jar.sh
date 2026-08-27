@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/bin/sh
 
-# 获取脚本所在目录的绝对路径
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# 获取脚本所在目录的绝对路径（兼容 sh，不依赖 bash）
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 # 从 dinky-flink-1.19 或 dinky-flink-1.20 回到 dinky 项目根目录
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PROJECT_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)"
 LIB_DIR="$PROJECT_ROOT/lib"
 
 echo "Installing vastbase jars to local Maven repository..."
@@ -22,9 +22,9 @@ mvn install:install-file \
     -DgeneratePom=true
 
 if [ $? -eq 0 ]; then
-    echo "✓ flink-connector-vastbase-cdc installed successfully"
+    echo "OK flink-connector-vastbase-cdc installed successfully"
 else
-    echo "✗ Failed to install flink-connector-vastbase-cdc"
+    echo "FAIL Failed to install flink-connector-vastbase-cdc"
     exit 1
 fi
 
@@ -40,12 +40,11 @@ mvn install:install-file \
     -DgeneratePom=true
 
 if [ $? -eq 0 ]; then
-    echo "✓ vastbase-connector-jdbc installed successfully"
+    echo "OK vastbase-connector-jdbc installed successfully"
 else
-    echo "✗ Failed to install vastbase-connector-jdbc"
+    echo "FAIL Failed to install vastbase-connector-jdbc"
     exit 1
 fi
 
 echo ""
 echo "All jars installed successfully!"
-
