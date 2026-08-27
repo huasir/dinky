@@ -17,6 +17,9 @@ dinky.db
 
 # Package Files #
 *.jar
+# 公司定制：Vastbase 私有依赖（CI install:install-file 需要）
+!lib/flink-connector-vastbase-cdc-*.jar
+!lib/JDBC-VB_V-*.jar
 *.war
 *.nar
 *.ear

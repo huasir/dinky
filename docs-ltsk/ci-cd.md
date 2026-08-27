@@ -25,9 +25,10 @@
 | Harbor | `http://10.0.0.17:3060/harbor`（`cicd` 项目） | 搜 maven / openjdk 可看其它 tag |
 
 1. 如 Flink 版本不是 1.20，在 CI/CD Variables 设置：
-   - `DINKY_MVN_PROFILES=prod,jdk11,flink-single-version,scala-2.12,flink-1.xx,web`
-2. 推送 `vendor/*` 或打 `ltsk-*` tag 后，到 Pipeline 下载 `build/*.tar.gz` 制品。
-3. 若仍 pending：核对 Job 是否带有 `global-ltd`，以及该 Runner 是否 online。
+   - `DINKY_MVN_PROFILES=prod,jdk11,flink-single-version,flink-1.xx,web`
+2. Vastbase 私有 jar 在仓库 `lib/`，CI 打包前会跑 `dinky-flink/dinky-flink-1.20/install_jar.sh` 装进本地 `.m2`（公司 Nexus 没有这些包）。
+3. 推送 `vendor/*` 或打 `ltsk-*` tag 后，到 Pipeline 下载 `build/*.tar.gz` 制品。
+4. 若仍 pending：核对 Job 是否带有 `global-ltd`，以及该 Runner 是否 online。
 
 ## 自动部署脚本（手动触发）
 

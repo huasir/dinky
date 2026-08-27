@@ -1,11 +1,8 @@
 # LTSK / 公司仓 GitLab CI
 # - Runner 标签 global-ltd
-# - Maven 镜像：Harbor cicd/maven-microsoft-openjdk:3.9.6-17（JDK17；公司无现成 JDK11+Maven+Nexus 组合）
-# - 自动：格式检查 + 打包制品
+# - Maven 镜像：Harbor cicd/maven-microsoft-openjdk:3.9.6-17（JDK17）
+# - 打包前需 install 本地 lib/ 中的 Vastbase 私有 jar（Nexus 无此制品）
 # - 不自动部署：部署用 script/ltsk/deploy-release.sh
-#
-# 注意：公司部分镜像会设置 MAVEN_CONFIG=/root/.m2；对 mvnw 会变成非法 CLI 参数。
-#       本流水线改用 mvn，并 unset MAVEN_CONFIG。
 
 stages:
   - check
@@ -13,12 +10,12 @@ stages:
 
 variables:
   MAVEN_OPTS: "-Xmx2G -Xms2G"
-  DINKY_MVN_PROFILES: "prod,jdk11,flink-single-version,scala-2.12,flink-1.20,web"
+  # 注意：本仓库无 scala-2.12 profile
+  DINKY_MVN_PROFILES: "prod,jdk11,flink-single-version,flink-1.20,web"
   GIT_DEPTH: "0"
   MAVEN_CONFIG: ""
 
 .default_maven:
-  # 真身在 Harbor：与短名 liudonglin/maven:ltd-cd-nexus（JDK8）不同
   image: 10.0.0.17:3060/cicd/maven-microsoft-openjdk:3.9.6-17
   tags:
     - global-ltd
@@ -26,6 +23,10 @@ variables:
     - unset MAVEN_CONFIG || true
     - java -version
     - mvn -v
+
+.install_vastbase_jars: &install_vastbase_jars
+  - unset MAVEN_CONFIG || true
+  - bash dinky-flink/dinky-flink-1.20/install_jar.sh
 
 spotless:
   extends: .default_maven
@@ -45,7 +46,7 @@ package-branch:
   rules:
     - if: $CI_COMMIT_BRANCH =~ /^vendor\//
   script:
-    - unset MAVEN_CONFIG || true
+    - *install_vastbase_jars
     - mvn -B --no-transfer-progress clean package -DskipTests=true -Dspotless.check.skip=true -P ${DINKY_MVN_PROFILES}
     - ls -lh build/ || true
   artifacts:
@@ -62,7 +63,7 @@ package-tag:
   rules:
     - if: $CI_COMMIT_TAG =~ /^ltsk-/
   script:
-    - unset MAVEN_CONFIG || true
+    - *install_vastbase_jars
     - mvn -B --no-transfer-progress clean package -DskipTests=true -Dspotless.check.skip=true -P ${DINKY_MVN_PROFILES}
     - ls -lh build/
     - |
