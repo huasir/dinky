@@ -135,6 +135,8 @@ public class CDCSource {
         Map<String, String> split = createConfigure(config, "split.");
         splitMapInit(split);
         Map<String, String> source = createConfigure(config, "source.");
+        promoteTopLevelSourceOption(config, source, "decoding.plugin.name");
+        promoteTopLevelSourceOption(config, source, "slot.name");
         Map<String, String> jdbc = createConfigure(config, "jdbc.properties.");
         Map<String, String> sink = createConfigure(config, "sink.");
 
@@ -202,6 +204,20 @@ public class CDCSource {
             }
         });
         return item;
+    }
+
+    /**
+     * 兼容 postgres/vastbase-cdc 直连参数写法：'decoding.plugin.name' / 'slot.name' 未加 source. 前缀时，
+     * 自动归入 source 配置，避免 connector 回退到默认 decoderbufs。
+     */
+    private static void promoteTopLevelSourceOption(
+            Map<String, String> config, Map<String, String> source, String key) {
+        if (Asserts.isNotNullString(source.get(key))) {
+            return;
+        }
+        if (Asserts.isNotNullString(config.get(key))) {
+            source.put(key, config.get(key));
+        }
     }
 
     private static void splitMapInit(Map<String, String> split) {

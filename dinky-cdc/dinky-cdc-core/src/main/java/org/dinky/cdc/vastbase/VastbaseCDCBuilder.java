@@ -119,7 +119,7 @@ public class VastbaseCDCBuilder extends AbstractCDCBuilder implements CDCBuilder
     @Override
     public DataStreamSource<String> build(StreamExecutionEnvironment env) {
         Map<String, String> source = config.getSource();
-        String decodingPluginName = source != null ? source.get("decoding.plugin.name") : null;
+        String decodingPluginName = resolveDecodingPluginName(source, config.getDebezium());
         String slotName = source != null ? source.get("slot.name") : null;
         String serverTimeZone = source != null ? source.get("server-time-zone") : null;
 
@@ -171,6 +171,11 @@ public class VastbaseCDCBuilder extends AbstractCDCBuilder implements CDCBuilder
                 }
             }
         }
+        // VastbaseSource.build() 会先写 plugin.name，再 putAll(debeziumProperties)，后者会覆盖前者。
+        // 必须在 debeziumProperties 中显式写入，确保 source.decoding.plugin.name 生效。
+        if (Asserts.isNotNullString(decodingPluginName)) {
+            debeziumProperties.setProperty("plugin.name", decodingPluginName);
+        }
         VastbaseSource.Builder<String> sourceBuilder = VastbaseSource.<String>builder()
                 .hostname(config.getHostname())
                 .port(config.getPort())
@@ -220,5 +225,15 @@ public class VastbaseCDCBuilder extends AbstractCDCBuilder implements CDCBuilder
                 config.getSchemaTableNameList());
 
         return env.addSource(sourceBuilder.build(), "Vastbase CDC Source");
+    }
+
+    private static String resolveDecodingPluginName(Map<String, String> source, Map<String, String> debezium) {
+        if (source != null && Asserts.isNotNullString(source.get("decoding.plugin.name"))) {
+            return source.get("decoding.plugin.name");
+        }
+        if (debezium != null && Asserts.isNotNullString(debezium.get("plugin.name"))) {
+            return debezium.get("plugin.name");
+        }
+        return null;
     }
 }
