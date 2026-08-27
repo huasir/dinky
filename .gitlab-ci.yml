@@ -1,7 +1,12 @@
 # LTSK / 公司仓 GitLab CI
-# - 对齐公司其它项目：Runner 标签 global-ltd + 内网 Maven 镜像
+# - Runner 标签 global-ltd + 内网 Maven 镜像
 # - 自动：格式检查 + 打包制品
 # - 不自动部署：部署用 script/ltsk/deploy-release.sh
+#
+# 注意：
+# 1) 公司镜像常设置 MAVEN_CONFIG=/root/.m2；对 mvnw 来说该变量是「额外 CLI 参数」，
+#    会导致 Unknown lifecycle phase "/root/.m2"。必须 unset。
+# 2) 镜像默认可能是 JDK8；Dinky 1.x / Spotless 需要 JDK11+，before_script 会尝试切换。
 
 stages:
   - check
@@ -9,20 +14,38 @@ stages:
 
 variables:
   MAVEN_OPTS: "-Xmx2G -Xms2G"
-  # 按公司实际 Flink 版本改；也可在 GitLab CI/CD Variables 覆盖
   DINKY_MVN_PROFILES: "prod,jdk11,flink-single-version,scala-2.12,flink-1.20,web"
   GIT_DEPTH: "0"
+  # 避免继承到错误的 MAVEN_CONFIG；before_script 里再 unset 一次双保险
+  MAVEN_CONFIG: ""
 
-# 与公司现网一致：必须带 tags，否则 Job 会一直 pending（无 Runner 领取）
 .default_maven:
   image: liudonglin/maven:ltd-cd-nexus
   tags:
     - global-ltd
   before_script:
+    - unset MAVEN_CONFIG || true
+    - |
+      # 优先使用镜像内 JDK11（若存在）
+      for candidate in \
+        /usr/local/openjdk-11 \
+        /usr/lib/jvm/java-11-openjdk \
+        /usr/lib/jvm/java-11 \
+        /opt/java/openjdk \
+        "$JAVA_HOME_11"
+      do
+        if [ -n "$candidate" ] && [ -x "$candidate/bin/java" ]; then
+          export JAVA_HOME="$candidate"
+          export PATH="$JAVA_HOME/bin:$PATH"
+          echo "Using JAVA_HOME=$JAVA_HOME"
+          break
+        fi
+      done
     - java -version
-    - ./mvnw -v || mvn -v
+    - unset MAVEN_CONFIG || true
+    # 与公司其它项目一致用 mvn（镜像已带 Nexus settings）；不用 mvnw，减少 MAVEN_CONFIG 坑
+    - mvn -v
 
-# ---------- check ----------
 spotless:
   extends: .default_maven
   stage: check
@@ -31,9 +54,16 @@ spotless:
     - if: $CI_COMMIT_BRANCH =~ /^vendor\//
     - if: $CI_COMMIT_TAG =~ /^ltsk-/
   script:
-    - ./mvnw -B --no-transfer-progress spotless:check -P flink-all -Dspotless.ratchetFrom=HEAD
+    - |
+      MAJOR=$(java -version 2>&1 | head -1 | sed -E 's/.*version "([0-9]+).*/\1/')
+      if [ "$MAJOR" -lt 11 ]; then
+        echo "ERROR: Spotless/Dinky 需要 JDK 11+，当前为 JDK $MAJOR（镜像 liudonglin/maven:ltd-cd-nexus 默认多为 8）"
+        echo "请在 CI Variables 设置 JAVA_HOME_11，或改用带 JDK11 的 Maven 镜像"
+        exit 1
+      fi
+    - unset MAVEN_CONFIG || true
+    - mvn -B --no-transfer-progress spotless:check -P flink-all -Dspotless.ratchetFrom=HEAD
 
-# ---------- package（分支推送：出包便于验证，不部署）----------
 package-branch:
   extends: .default_maven
   stage: package
@@ -41,11 +71,14 @@ package-branch:
   rules:
     - if: $CI_COMMIT_BRANCH =~ /^vendor\//
   script:
-    - >
-      ./mvnw -B --no-transfer-progress clean package
-      -DskipTests=true
-      -Dspotless.check.skip=true
-      -P ${DINKY_MVN_PROFILES}
+    - unset MAVEN_CONFIG || true
+    - |
+      MAJOR=$(java -version 2>&1 | head -1 | sed -E 's/.*version "([0-9]+).*/\1/')
+      if [ "$MAJOR" -lt 11 ]; then
+        echo "ERROR: 打包需要 JDK 11+，当前为 JDK $MAJOR"
+        exit 1
+      fi
+    - mvn -B --no-transfer-progress clean package -DskipTests=true -Dspotless.check.skip=true -P ${DINKY_MVN_PROFILES}
     - ls -lh build/ || true
   artifacts:
     name: "dinky-$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA"
@@ -54,7 +87,6 @@ package-branch:
     expire_in: 7 days
     when: on_success
 
-# ---------- package（生产 tag：出正式制品，仍不自动部署）----------
 package-tag:
   extends: .default_maven
   stage: package
@@ -62,14 +94,17 @@ package-tag:
   rules:
     - if: $CI_COMMIT_TAG =~ /^ltsk-/
   script:
-    - >
-      ./mvnw -B --no-transfer-progress clean package
-      -DskipTests=true
-      -Dspotless.check.skip=true
-      -P ${DINKY_MVN_PROFILES}
+    - unset MAVEN_CONFIG || true
+    - |
+      MAJOR=$(java -version 2>&1 | head -1 | sed -E 's/.*version "([0-9]+).*/\1/')
+      if [ "$MAJOR" -lt 11 ]; then
+        echo "ERROR: 打包需要 JDK 11+，当前为 JDK $MAJOR"
+        exit 1
+      fi
+    - mvn -B --no-transfer-progress clean package -DskipTests=true -Dspotless.check.skip=true -P ${DINKY_MVN_PROFILES}
     - ls -lh build/
     - |
-      echo "制品已生成。部署请在有权限的机器上执行："
+      echo "制品已生成。部署请执行："
       echo "  ./script/ltsk/deploy-release.sh --env <deploy.env> --package build/dinky-release-*.tar.gz"
   artifacts:
     name: "dinky-$CI_COMMIT_TAG"
