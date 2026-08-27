@@ -14,10 +14,18 @@
 
 文件：[`.gitlab-ci.yml`](../.gitlab-ci.yml)
 
-1. 在 GitLab 项目启用 Runner（能访问 Maven 依赖源）。
-2. 如 Flink 版本不是 1.20，在 CI/CD Variables 设置：
+对齐公司其它项目的关键配置：
+
+| 项 | 值 | 说明 |
+|----|-----|------|
+| Runner `tags` | `global-ltd` | **必填**，否则 Job 一直 pending |
+| Maven 镜像 | `liudonglin/maven:ltd-cd-nexus` | 内网 Nexus，与现网一致 |
+| Harbor（可选，未接） | `harbor.chinasteel.com.cn` / `ltd-bigdata` | 其它项目 docker-push 用；Dinky 当前只出 tar.gz |
+
+1. 如 Flink 版本不是 1.20，在 CI/CD Variables 设置：
    - `DINKY_MVN_PROFILES=prod,jdk11,flink-single-version,scala-2.12,flink-1.xx,web`
-3. 推送 `vendor/*` 或打 `ltsk-*` tag 后，到 Pipeline 下载 `build/*.tar.gz` 制品。
+2. 推送 `vendor/*` 或打 `ltsk-*` tag 后，到 Pipeline 下载 `build/*.tar.gz` 制品。
+3. 若仍 pending：核对 Job 是否带有 `global-ltd`，以及该 Runner 是否 online。
 
 ## 自动部署脚本（手动触发）
 

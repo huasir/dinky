@@ -1,6 +1,7 @@
 # LTSK / 公司仓 GitLab CI
+# - 对齐公司其它项目：Runner 标签 global-ltd + 内网 Maven 镜像
 # - 自动：格式检查 + 打包制品
-# - 不自动部署：部署请用 script/ltsk/deploy-release.sh（可人工执行，或日后接到手动 Job）
+# - 不自动部署：部署用 script/ltsk/deploy-release.sh
 
 stages:
   - check
@@ -12,11 +13,14 @@ variables:
   DINKY_MVN_PROFILES: "prod,jdk11,flink-single-version,scala-2.12,flink-1.20,web"
   GIT_DEPTH: "0"
 
+# 与公司现网一致：必须带 tags，否则 Job 会一直 pending（无 Runner 领取）
 .default_maven:
-  image: maven:3.9-eclipse-temurin-11
+  image: liudonglin/maven:ltd-cd-nexus
+  tags:
+    - global-ltd
   before_script:
     - java -version
-    - ./mvnw -v
+    - ./mvnw -v || mvn -v
 
 # ---------- check ----------
 spotless:
@@ -66,8 +70,7 @@ package-tag:
     - ls -lh build/
     - |
       echo "制品已生成。部署请在有权限的机器上执行："
-      echo "  cp script/ltsk/deploy.env.example deploy.env  # 填好后"
-      echo "  ./script/ltsk/deploy-release.sh --env deploy.env --package build/dinky-release-*.tar.gz"
+      echo "  ./script/ltsk/deploy-release.sh --env <deploy.env> --package build/dinky-release-*.tar.gz"
   artifacts:
     name: "dinky-$CI_COMMIT_TAG"
     paths:
